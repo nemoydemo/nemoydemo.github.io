@@ -1,10 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Private Site</title>
+  <title>Login</title>
+  <script>
+    function checkPassword() {
+      const password = document.getElementById("password").value;
+      if (password === "pan") {
+        window.location.href = "home.html"; // redirect to real page
+      } else {
+        alert("Wrong password!");
+      }
+    }
+  </script>
 </head>
 <body>
-  <h1>Welcome, friend!</h1>
-  <p>This is our private website.</p>
+  <h2>Private Site Login</h2>
+  <input type="password" id="password" placeholder="Enter password">
+  <button onclick="checkPassword()">Login</button>
 </body>
 </html>
