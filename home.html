@@ -5,12 +5,15 @@
   <style>
     body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
     .word { font-size: 2rem; font-weight: bold; margin: 20px 0; }
-    .definition { font-size: 1.2rem; color: #444; margin-bottom: 40px; }
-    .note-box { margin: 20px auto; width: 80%; max-width: 500px; text-align: left; }
+    .definition { font-size: 1.2rem; color: #444; margin-bottom: 30px; }
+    .response-box { margin: 20px auto; width: 80%; max-width: 600px; }
     textarea { width: 100%; height: 100px; padding: 10px; font-size: 1rem; border-radius: 6px; border: 1px solid #ccc; margin-top: 5px; }
-    label { font-weight: bold; display: block; margin-bottom: 5px; }
+    select, button { margin-top: 10px; padding: 8px 12px; font-size: 1rem; }
+    .history { margin-top: 40px; text-align: left; max-width: 700px; margin-left: auto; margin-right: auto; }
+    .entry { border-bottom: 1px solid #ddd; padding: 10px 0; }
+    .entry strong { display: block; margin-bottom: 5px; }
   </style>
-  <!-- Firebase libraries -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 </head>
@@ -19,16 +22,23 @@
   <div class="word" id="wordBox">Loading...</div>
   <div class="definition" id="definition"></div>
 
-  <!-- Selene's notes -->
-  <div class="note-box">
-    <label for="seleneNote">Selene's Thoughts:</label>
-    <textarea id="seleneNote" placeholder="Write here..."></textarea>
+  <!-- Shared response form -->
+  <div class="response-box">
+    <label for="nameSelect"><strong>Who are you?</strong></label>
+    <select id="nameSelect">
+      <option value="Selene">Selene</option>
+      <option value="Angelica">Angelica</option>
+    </select>
+
+    <textarea id="responseInput" placeholder="Write your thoughts..."></textarea>
+    <br>
+    <button id="submitBtn">Submit</button>
   </div>
 
-  <!-- Angelica's notes -->
-  <div class="note-box">
-    <label for="angelicaNote">Angelica's Thoughts:</label>
-    <textarea id="angelicaNote" placeholder="Write here..."></textarea>
+  <!-- History section -->
+  <div class="history">
+    <h2>Response History</h2>
+    <div id="historyList"></div>
   </div>
 
   <script>
@@ -42,18 +52,17 @@
       appId: "1:396078882117:web:82f885e49eb6d3c556722c"
     };
 
-    // Init Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Fetch Word of the Day
+    // Get Word of the Day
     async function getWordOfTheDay() {
       try {
         const today = new Date().toISOString().split("T")[0];
         const saved = JSON.parse(localStorage.getItem("wordOfTheDay"));
         if (saved && saved.date === today) {
           displayWord(saved.word, saved.definition);
-          return;
+          return saved.word;
         }
 
         const wordResponse = await fetch("https://random-word-api.herokuapp.com/word");
@@ -70,8 +79,10 @@
 
         localStorage.setItem("wordOfTheDay", JSON.stringify({ date: today, word, definition }));
         displayWord(word, definition);
+        return word;
       } catch (err) {
         document.getElementById("wordBox").textContent = "Error fetching word.";
+        return null;
       }
     }
 
@@ -80,32 +91,45 @@
       document.getElementById("definition").textContent = definition;
     }
 
-    // 🔹 Real-time syncing for notes
-    function setupNotes() {
-      const seleneNote = document.getElementById("seleneNote");
-      const angelicaNote = document.getElementById("angelicaNote");
+    // Submit a response
+    async function submitResponse(word) {
+      const name = document.getElementById("nameSelect").value;
+      const text = document.getElementById("responseInput").value.trim();
+      if (!text) return;
 
-      // Listen to Firestore updates
-      db.collection("notes").doc("sharedNotes").onSnapshot(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          seleneNote.value = data.selene || "";
-          angelicaNote.value = data.angelica || "";
-        }
+      await db.collection("responses").add({
+        word,
+        name,
+        text,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      // Save changes
-      seleneNote.addEventListener("input", () => {
-        db.collection("notes").doc("sharedNotes").set({ selene: seleneNote.value }, { merge: true });
-      });
-
-      angelicaNote.addEventListener("input", () => {
-        db.collection("notes").doc("sharedNotes").set({ angelica: angelicaNote.value }, { merge: true });
-      });
+      document.getElementById("responseInput").value = "";
     }
 
-    getWordOfTheDay();
-    setupNotes();
+    // Show response history
+    function loadHistory() {
+      db.collection("responses")
+        .orderBy("timestamp", "desc")
+        .onSnapshot(snapshot => {
+          const historyList = document.getElementById("historyList");
+          historyList.innerHTML = "";
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const div = document.createElement("div");
+            div.className = "entry";
+            div.innerHTML = `<strong>${data.word} – ${data.name}</strong>${data.text}`;
+            historyList.appendChild(div);
+          });
+        });
+    }
+
+    // Main
+    (async () => {
+      const word = await getWordOfTheDay();
+      document.getElementById("submitBtn").addEventListener("click", () => submitResponse(word));
+      loadHistory();
+    })();
   </script>
 </body>
 </html>
