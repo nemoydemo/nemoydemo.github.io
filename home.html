@@ -1,10 +1,111 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Private Site</title>
+  <title>Word of the Day</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+    .word { font-size: 2rem; font-weight: bold; margin: 20px 0; }
+    .definition { font-size: 1.2rem; color: #444; margin-bottom: 40px; }
+    .note-box { margin: 20px auto; width: 80%; max-width: 500px; text-align: left; }
+    textarea { width: 100%; height: 100px; padding: 10px; font-size: 1rem; border-radius: 6px; border: 1px solid #ccc; margin-top: 5px; }
+    label { font-weight: bold; display: block; margin-bottom: 5px; }
+  </style>
+  <!-- Firebase libraries -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <h1>Welcome, friend!</h1>
-  <p>This is our private website.</p>
+  <h1>Word of the Day</h1>
+  <div class="word" id="wordBox">Loading...</div>
+  <div class="definition" id="definition"></div>
+
+  <!-- Selene's notes -->
+  <div class="note-box">
+    <label for="seleneNote">Selene's Thoughts:</label>
+    <textarea id="seleneNote" placeholder="Write here..."></textarea>
+  </div>
+
+  <!-- Angelica's notes -->
+  <div class="note-box">
+    <label for="angelicaNote">Angelica's Thoughts:</label>
+    <textarea id="angelicaNote" placeholder="Write here..."></textarea>
+  </div>
+
+  <script>
+    // 🔹 Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCSIO3qjNhXbnwq9D_-L4jT8p1t1izqf9Y",
+      authDomain: "nemoydemo.firebaseapp.com",
+      projectId: "nemoydemo",
+      storageBucket: "nemoydemo.firebasestorage.app",
+      messagingSenderId: "396078882117",
+      appId: "1:396078882117:web:82f885e49eb6d3c556722c"
+    };
+
+    // Init Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Fetch Word of the Day
+    async function getWordOfTheDay() {
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const saved = JSON.parse(localStorage.getItem("wordOfTheDay"));
+        if (saved && saved.date === today) {
+          displayWord(saved.word, saved.definition);
+          return;
+        }
+
+        const wordResponse = await fetch("https://random-word-api.herokuapp.com/word");
+        const [word] = await wordResponse.json();
+
+        const defResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+        let definition = "No definition found.";
+        if (defResponse.ok) {
+          const data = await defResponse.json();
+          if (data[0]?.meanings[0]?.definitions[0]?.definition) {
+            definition = data[0].meanings[0].definitions[0].definition;
+          }
+        }
+
+        localStorage.setItem("wordOfTheDay", JSON.stringify({ date: today, word, definition }));
+        displayWord(word, definition);
+      } catch (err) {
+        document.getElementById("wordBox").textContent = "Error fetching word.";
+      }
+    }
+
+    function displayWord(word, definition) {
+      document.getElementById("wordBox").textContent = word;
+      document.getElementById("definition").textContent = definition;
+    }
+
+    // 🔹 Real-time syncing for notes
+    function setupNotes() {
+      const seleneNote = document.getElementById("seleneNote");
+      const angelicaNote = document.getElementById("angelicaNote");
+
+      // Listen to Firestore updates
+      db.collection("notes").doc("sharedNotes").onSnapshot(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          seleneNote.value = data.selene || "";
+          angelicaNote.value = data.angelica || "";
+        }
+      });
+
+      // Save changes
+      seleneNote.addEventListener("input", () => {
+        db.collection("notes").doc("sharedNotes").set({ selene: seleneNote.value }, { merge: true });
+      });
+
+      angelicaNote.addEventListener("input", () => {
+        db.collection("notes").doc("sharedNotes").set({ angelica: angelicaNote.value }, { merge: true });
+      });
+    }
+
+    getWordOfTheDay();
+    setupNotes();
+  </script>
 </body>
 </html>
