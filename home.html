@@ -58,17 +58,35 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-  let currentWord = ""; // store the latest fetched word
+  let currentWord = ""; 
 
   async function getRandomWord() {
     try {
       const response = await fetch("https://random-word-api.herokuapp.com/word");
       const data = await response.json();
-      currentWord = data[0]; // update the global variable
+      currentWord = data[0];
       document.getElementById("wordBox").textContent = currentWord;
+
+      // fetch definition from dictionary API
+      fetchDefinition(currentWord);
+
       return currentWord; 
     } catch (error) {
       document.getElementById("wordBox").textContent = "Error fetching word 😢";
+      console.error(error);
+    }
+  }
+
+  async function fetchDefinition(word) {
+    try {
+      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+      if (!res.ok) throw new Error("Definition not found");
+
+      const data = await res.json();
+      const meaning = data[0]?.meanings[0]?.definitions[0]?.definition || "No definition available.";
+      document.getElementById("definition").textContent = meaning;
+    } catch (error) {
+      document.getElementById("definition").textContent = "No definition found 😢";
       console.error(error);
     }
   }
