@@ -18,6 +18,96 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <h1>Word of the Day</h1>
+
+  <head>
+  <meta charset="UTF-8">
+  <style>
+    .clocks-container {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      flex-direction: row;
+      z-index: 9999;
+    }
+    .clock-frame {
+      width: 250px;
+      height: 200px;
+      transform: scale(0.5);
+      transform-origin: top left;
+      margin-right: -100px; /* pull clocks closer */
+    }
+  </style>
+</head>
+<body>
+  <div class="clocks-container">
+    <!-- Medellín -->
+    <iframe
+      class="clock-frame"
+      src="https://worlddatetime.com/embed/simple-analog-clock.php?tz=America/Bogota&lbl=Medellín"
+      scrolling="no" allowtransparency="true">
+    </iframe>
+
+    <!-- Madrid -->
+    <iframe
+      class="clock-frame"
+      src="https://worlddatetime.com/embed/simple-analog-clock.php?tz=Europe/Madrid&lbl=Madrid"
+      scrolling="no" allowtransparency="true">
+    </iframe>
+  </div>
+</body>
+
+
+<head>
+  <meta charset="UTF-8">
+<style>
+    .countdown-container {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <div class="countdown-container" id="countdown">
+    Loading...
+  </div>
+
+  <script>
+    // Set the target date: September 9 of the current year
+    const targetDate = new Date(new Date().getFullYear(), 8, 9, 0, 0, 0); // Month is 0-indexed (8 = September)
+
+    function updateCountdown() {
+      const now = new Date();
+      let diff = targetDate - now;
+
+      if (diff <= 0) {
+        document.getElementById("countdown").innerHTML = "🎉 It's September 9! 🎉";
+        clearInterval(interval);
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      document.getElementById("countdown").innerHTML =
+        `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+
+    const interval = setInterval(updateCountdown, 1000);
+    updateCountdown();
+  </script>
+</body>
+
   <div class="word" id="wordBox">Loading...</div>
   <div class="definition" id="definition"></div>
 
@@ -90,7 +180,7 @@
   }
 
   function displayWord(word, definition) {
-    currentWord = word; // make sure currentWord is updated if you display manually
+    currentWord = word;
     document.getElementById("wordBox").textContent = word;
     document.getElementById("definition").textContent = definition;
   }
@@ -101,7 +191,7 @@
     if (!text) return;
 
     await db.collection("responses").add({
-      word: currentWord, // always use the most recent word
+      word: currentWord,
       name,
       text,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -110,23 +200,21 @@
     document.getElementById("responseInput").value = "";
   }
 
-
-    // Show response history
-    function loadHistory() {
-      db.collection("responses")
-        .orderBy("timestamp", "desc")
-        .onSnapshot(snapshot => {
-          const historyList = document.getElementById("historyList");
-          historyList.innerHTML = "";
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            const div = document.createElement("div");
-            div.className = "entry";
-            div.innerHTML = `<strong>${data.word} – ${data.name}</strong>${data.text}`;
-            historyList.appendChild(div);
-          });
+  function loadHistory() {
+    db.collection("responses")
+      .orderBy("timestamp", "desc")
+      .onSnapshot(snapshot => {
+        const historyList = document.getElementById("historyList");
+        historyList.innerHTML = "";
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const div = document.createElement("div");
+          div.className = "entry";
+          div.innerHTML = `<strong>${data.word} – ${data.name}</strong>${data.text}`;
+          historyList.appendChild(div);
         });
-    }
+      });
+  }
 
     // Main
     (async () => {
