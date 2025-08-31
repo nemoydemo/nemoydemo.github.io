@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <style>
+    .quote {
+      margin-left: 5px;   /* indent quotes */
+      margin-bottom: 20px; /* space between quotes */
+      font-size: 1rem;
+      color: #444;
+      font-style: italic;
+    }
+  </style>
   <title>Login</title>
   <script>
     function checkPassword() {
@@ -8,7 +17,7 @@
       if (password === "pan") {
         window.location.href = "home.html"; // redirect to real page
       }
-      if (password === "secret") {
+      if (password === "toledo") {
         window.location.href = "secret.html"; // redirect to real page
       } else {
         alert("Wrong password!");
@@ -20,5 +29,6 @@
   <h2>Private Site Login</h2>
   <input type="password" id="password" placeholder="Enter password">
   <button onclick="checkPassword()">Login</button>
+  <blockquote class="quote">Hint: where is the 🦊 from?</blockquote>
 </body>
 </html>
