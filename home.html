@@ -37,6 +37,19 @@
     </audio>
   </div>
 
+  <style>
+    .horizontal-line {
+      position: fixed;  /* stays in place when scrolling */
+      top: 125px;       /* distance from the top of the page */
+      left: 0;
+      width: 100%;      /* spans the entire page width */
+      height: 2px;      /* thickness of the line */
+      background-color: black; /* color of the line */
+      z-index: 9999;    /* on top of other elements */
+    }
+  </style>
+  <div class="horizontal-line"></div>
+  <br><br><br><br><br><br>
   <h1>Word of the Day</h1>
 
   <head>
@@ -51,6 +64,7 @@
       z-index: 9999;
     }
     .clock-frame {
+      border: none;
       width: 250px;
       height: 200px;
       transform: scale(0.5);
@@ -85,7 +99,7 @@
       position: fixed;
       top: 10px;
       right: 10px;
-      background: #544769;
+      background: #0d1b2a;
       padding: 8px 12px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
@@ -96,7 +110,7 @@
       display: flex;               /* put items side by side */
       align-items: center;
       gap: 8px;                    /* space between title and countdown */
-      color: #160F2E;
+      color: #FFFFFF;
       font-weight: bold;
     }
 
