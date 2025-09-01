@@ -17,6 +17,26 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  
+  <style>
+    .top-right {
+      position: absolute; 
+      top: 18px;          /* distance from the top of the page */
+      right: 300px;        /* distance from the right of the page */
+    }
+
+    .top-right audio {
+      height: 20px;
+      width: 250px;
+    }
+  </style>
+
+  <div class="top-right">
+    <audio controls>
+      <source src="almost-monday.mp3" type="audio/mpeg">
+    </audio>
+  </div>
+
   <h1>Word of the Day</h1>
 
   <head>
@@ -65,20 +85,31 @@
       position: fixed;
       top: 10px;
       right: 10px;
-      background: #fff;
+      background: #544769;
       padding: 8px 12px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       font-family: Arial, sans-serif;
       font-size: 14px;
       z-index: 9999;
+
+      display: flex;               /* put items side by side */
+      align-items: center;
+      gap: 8px;                    /* space between title and countdown */
+      color: #160F2E;
+      font-weight: bold;
+    }
+
+    .countdown-title {
+      white-space: nowrap;         /* prevent breaking into two lines */
     }
   </style>
-</head>
-<body>
-  <div class="countdown-container" id="countdown">
-    Loading...
-  </div>
+  </head>
+  <body>
+    <div class="countdown-container">
+      <div class="countdown-title">Days left until reunion: </div>
+      <div id="countdown">Loading...</div>
+    </div>
 
   <script>
     // Set the target date: September 9 of the current year
