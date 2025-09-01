@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Go (Weiqi/Baduk) – Two‑Player Local</title>
+  <style>
+    :root{
+      --bg:#0c0f14; --panel:#11161e; --panel-2:#0e141c; --accent:#5eead4; --accent-2:#93c5fd; --text:#e5e7eb; --muted:#9aa4b2;
+      --board:#d1a465; --line:#111; --shadow:rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:linear-gradient(180deg, var(--bg), #0a0c10 60%); color:var(--text); display:flex; align-items:center; justify-content:center;}
+    .wrap{width:min(1100px, 98vw); display:grid; grid-template-columns: 1fr 320px; gap:18px; padding:18px}
+    @media(max-width: 960px){ .wrap{grid-template-columns: 1fr; place-items:center} }
+    .board-card{background:var(--panel); border:1px solid #1b2431; border-radius:18px; padding:14px; box-shadow:0 20px 50px var(--shadow);}
+    .side{background:var(--panel); border:1px solid #1b2431; border-radius:18px; padding:16px; box-shadow:0 20px 50px var(--shadow);}
+    h1{margin:0 0 8px; font-size:20px; font-weight:700; letter-spacing:.2px}
+    .sub{margin:0 0 16px; color:var(--muted); font-size:13px}
+    .row{display:flex; gap:8px; flex-wrap:wrap}
+    button, select{appearance:none; border:1px solid #263142; background:var(--panel-2); color:var(--text); padding:10px 12px; border-radius:12px; font-weight:600; cursor:pointer; transition:transform .04s ease, border-color .2s ease, background .2s ease}
+    button:hover, select:hover{border-color:#334155}
+    button:active{transform:translateY(1px)}
+    button.primary{background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#0b1220; border-color:transparent}
+    button.ghost{background:transparent}
+    .pill{display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:999px; background:#0b1320; border:1px solid #1c2a3d; font-size:13px}
+    .color-dot{width:12px; height:12px; border-radius:50%; box-shadow:0 1px 0 rgba(0,0,0,.5) inset}
+    .dot-black{background:#111}
+    .dot-white{background:#eee; border:1px solid #ccc}
+    .flex-between{display:flex; align-items:center; justify-content:space-between}
+    .stat{font-variant-numeric:tabular-nums}
+    canvas{display:block; width:100%; height:auto; border-radius:14px; background:var(--board); box-shadow:inset 0 2px 0 rgba(255,255,255,.08), inset 0 -2px 0 rgba(0,0,0,.1)}
+    .hint{font-size:12px; color:var(--muted)}
+    .sep{height:1px; background:#1b2431; margin:12px 0}
+    .bad{color:#fca5a5}
+    .good{color:#86efac}
+    .tag{font-size:11px; padding:2px 8px; border-radius:999px; background:#0d1624; border:1px solid #22324a; color:#9db5d6}
+    .coord{position:absolute; font-size:11px; color:#0008; text-shadow:0 1px 0 #fff8}
+    .panel-footer{display:flex; gap:10px; flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="board-card">
+      <div class="flex-between" style="margin:4px 6px 10px 6px">
+        <div>
+          <h1>Go – Two‑Player Local</h1>
+          <p class="sub">Left click to place. Alternate turns. Pass twice to score. Undo anytime.</p>
+        </div>
+        <div class="row">
+          <select id="sizeSelect" title="Board size">
+            <option value="9">9×9</option>
+            <option value="13">13×13</option>
+            <option value="19" selected>19×19</option>
+          </select>
+          <button id="newBtn" class="ghost" title="Start a fresh game">New Game</button>
+        </div>
+      </div>
+      <canvas id="go" width="1024" height="1024" aria-label="Go board" role="img"></canvas>
+      <div class="panel-footer" style="margin-top:12px">
+        <button id="undoBtn">Undo</button>
+        <button id="passBtn">Pass</button>
+        <button id="scoreBtn" class="primary">Score Now</button>
+        <span id="koTag" class="tag" style="display:none">KO active</span>
+        <span id="coordTag" class="tag" style="display:none">Coordinates ON</span>
+        <button id="toggleCoord" class="ghost">Toggle Coordinates</button>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="row" style="justify-content:space-between; align-items:center">
+        <div class="pill"><span class="color-dot dot-black"></span> Black to move</div>
+        <div class="pill"><span class="color-dot dot-white"></span> White</div>
+      </div>
+      <div class="sep"></div>
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="hint">Turn</div>
+          <div id="turnLabel" class="stat" style="font-size:28px; font-weight:800">Black</div>
+        </div>
+        <div>
+          <div class="hint">Captures (prisoners)</div>
+          <div class="stat" style="font-size:22px">
+            B <span id="capB">0</span> · W <span id="capW">0</span>
+          </div>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div>
+        <div class="hint">Status</div>
+        <div id="status" style="font-size:14px; line-height:1.4">Ready.</div>
+      </div>
+      <div class="sep"></div>
+      <div>
+        <div class="hint">Scoring</div>
+        <div id="scorePanel" class="stat" style="font-size:18px; font-weight:700">—</div>
+        <div class="hint" style="margin-top:6px">Uses <b>area scoring (Chinese rules)</b>: stones on board + surrounded empty points. Captured stones are shown above but not added to score.</div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+  (()=>{
+    const canvas = document.getElementById('go');
+    const ctx = canvas.getContext('2d');
+    const sizeSelect = document.getElementById('sizeSelect');
+    const newBtn = document.getElementById('newBtn');
+    const passBtn = document.getElementById('passBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const scoreBtn = document.getElementById('scoreBtn');
+    const koTag = document.getElementById('koTag');
+    const coordTag = document.getElementById('coordTag');
+    const toggleCoord = document.getElementById('toggleCoord');
+
+    const statusEl = document.getElementById('status');
+    const turnLabel = document.getElementById('turnLabel');
+    const capB = document.getElementById('capB');
+    const capW = document.getElementById('capW');
+    const scorePanel = document.getElementById('scorePanel');
+
+    const S = {N:19, board:[], turn:1, history:[], passStreak:0, caps:[0,0,0], lastMove:null, showCoords:false, seenPositions:new Set()};
+
+    function init(n){
+      S.N = n; S.board = new Array(n*n).fill(0); S.turn=1; S.history=[]; S.passStreak=0; S.caps=[0,0,0]; S.lastMove=null; S.seenPositions = new Set([hashBoard(S.board)]);
+      scorePanel.textContent = '—';
+      koTag.style.display='none';
+      draw();
+      updateUI('New '+n+'×'+n+' game. Black to move.');
+    }
+
+    function idx(x,y){return y*S.N + x}
+    function inb(x,y){return x>=0&&y>=0&&x<S.N&&y<S.N}
+
+    function neighbors(x,y){
+      return [[x+1,y],[x-1,y],[x,y+1],[x,y-1]].filter(p=>inb(p[0],p[1]));
+    }
+
+    function groupAndLiberties(x,y,board=S.board){
+      const color = board[idx(x,y)];
+      if(!color) return {stones:new Set(), libs:new Set()};
+      const stack=[[x,y]]; const seen=new Set();
+      const stones=new Set(); const libs=new Set();
+      while(stack.length){
+        const [cx,cy]=stack.pop(); const key=idx(cx,cy);
+        if(seen.has(key)) continue; seen.add(key); stones.add(key);
+        for(const [nx,ny] of neighbors(cx,cy)){
+          const v = board[idx(nx,ny)];
+          if(v===0) libs.add(idx(nx,ny));
+          else if(v===color && !seen.has(idx(nx,ny))) stack.push([nx,ny]);
+        }
+      }
+      return {stones, libs};
+    }
+
+    function cloneBoard(b){return b.slice()}
+
+    function place(x,y){
+      if(!inb(x,y)) return false;
+      const p = idx(x,y);
+      if(S.board[p]!==0) {updateUI('Illegal: point occupied.'); return false}
+
+      const test = cloneBoard(S.board);
+      test[p] = S.turn;
+      // capture adjacent opponent groups with zero liberties
+      const opp = 3 - S.turn;
+      let captured=[];
+      const adj = neighbors(x,y);
+      for(const [nx,ny] of adj){
+        if(test[idx(nx,ny)]===opp){
+          const g = groupAndLiberties(nx,ny,test);
+          if(g.libs.size===0){
+            captured = captured.concat([...g.stones]);
+          }
+        }
+      }
+      // remove captured
+      for(const k of captured){ test[k]=0 }
+      // check suicide (after capture removal)
+      const gSelf = groupAndLiberties(x,y,test);
+      if(gSelf.libs.size===0){ updateUI('Illegal: suicide.'); return false }
+
+      const h = hashBoard(test);
+      if(S.seenPositions.has(h)){
+        updateUI('Illegal: violates ko / superko (repeating position).');
+        return false;
+      }
+
+      // commit
+      pushHistory();
+      const prevKoSize = captured.length===1? 'single' : '';
+      S.board = test;
+      S.lastMove = p;
+      S.turn = 3 - S.turn;
+      S.passStreak = 0;
+      if(captured.length){ S.caps[prevKoSize? S.turn : 0]++; } // dummy to reference var, not used
+      const capCount = captured.length;
+      if(capCount){
+        // add to prisoners tally for the player who captured (the one who just moved)
+        const captor = 3 - S.turn;
+        if(captor===1) S.caps[1]+=capCount; else S.caps[2]+=capCount;
+      }
+      S.seenPositions.add(h);
+      koTag.style.display = capCount===1? 'inline-block':'none';
+      draw();
+      updateUI(`${capCount? `Captured ${capCount}`: 'Placed'} at ${coordLabel(x,y)} · ${S.turn===1?'Black':'White'} to move.`);
+      return true;
+    }
+
+    function pass(){
+      pushHistory();
+      S.turn = 3 - S.turn;
+      S.passStreak++;
+      updateUI(`Pass. ${S.turn===1?'Black':'White'} to move.`);
+      if(S.passStreak>=2){ score(true); }
+      draw();
+    }
+
+    function undo(){
+      if(!S.history.length){ updateUI('Nothing to undo.'); return }
+      const st = S.history.pop();
+      Object.assign(S, st);
+      draw();
+      updateUI('Undid last move.');
+    }
+
+    function pushHistory(){
+      // shallow snapshot
+      S.history.push({
+        N:S.N, board:S.board.slice(), turn:S.turn, passStreak:S.passStreak, caps:S.caps.slice(), lastMove:S.lastMove, showCoords:S.showCoords, seenPositions:new Set(S.seenPositions)
+      });
+    }
+
+    function hashBoard(b){ return b.join(',') }
+
+    function draw(){
+      const n=S.N; const w=canvas.width, h=canvas.height; ctx.clearRect(0,0,w,h);
+      // padding
+      const pad = 40; const cw = w - pad*2; const ch = h - pad*2; const stepX = cw/(n-1); const stepY = ch/(n-1);
+      // wood texture-ish
+      const grd = ctx.createLinearGradient(0,0,w,h); grd.addColorStop(0,'#d6a86e'); grd.addColorStop(1,'#c7965d'); ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
+      // grid
+      ctx.strokeStyle='#000000aa'; ctx.lineWidth=1;
+      for(let i=0;i<n;i++){
+        const x = pad + i*stepX; const y = pad + i*stepY;
+        ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w-pad, y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, h-pad); ctx.stroke();
+      }
+      // star points (hoshi) for 9/13/19
+      const stars = hoshiPoints(n);
+      ctx.fillStyle='#111';
+      for(const [sx,sy] of stars){
+        const x = pad + sx*stepX; const y = pad + sy*stepY; ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
+      }
+      // stones
+      for(let y=0;y<n;y++){
+        for(let x=0;x<n;x++){
+          const v=S.board[idx(x,y)]; if(!v) continue;
+          const cx = pad + x*stepX; const cy = pad + y*stepY;
+          ctx.save();
+          // shadow
+          ctx.beginPath(); ctx.arc(cx+1, cy+1, stepX*0.45, 0, Math.PI*2);
+          ctx.fillStyle='rgba(0,0,0,.18)'; ctx.fill();
+          // stone
+          const rad = stepX*0.44;
+          const grad = ctx.createRadialGradient(cx- rad*0.3, cy- rad*0.3, rad*0.2, cx, cy, rad);
+          if(v===1){ grad.addColorStop(0,'#444'); grad.addColorStop(1,'#0b0b0b'); }
+          else { grad.addColorStop(0,'#fff'); grad.addColorStop(1,'#cfcfcf'); }
+          ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+          // last move mark
+          if(S.lastMove===idx(x,y)){
+            ctx.beginPath(); ctx.arc(cx, cy, rad*0.35, 0, Math.PI*2); ctx.strokeStyle= v===1? '#9ae6b4':'#2563eb'; ctx.lineWidth=2; ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
+      // coordinates
+      if(S.showCoords){
+        ctx.fillStyle='rgba(0,0,0,.55)'; ctx.font='12px system-ui, -apple-system, Segoe UI, Roboto, Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        for(let i=0;i<n;i++){
+          const x = pad + i*stepX; const yTop = pad - 16; const yBot = h-pad + 16;
+          const label = letters()[i];
+          ctx.fillText(label, x, yTop);
+          ctx.fillText(label, x, yBot);
+          const y = pad + i*stepY; const xLeft = pad - 16; const xRight = w-pad + 16;
+          const num = (n-i).toString();
+          ctx.fillText(num, xLeft, y);
+          ctx.fillText(num, xRight, y);
+        }
+      }
+    }
+
+    function hoshiPoints(n){
+      if(n===9){ return [[2,2],[2,6],[6,2],[6,6],[4,4]] }
+      if(n===13){ return [[3,3],[3,9],[9,3],[9,9],[6,6],[3,6],[6,3],[9,6],[6,9]] }
+      if(n===19){ const pts=[3,9,15]; const res=[]; pts.forEach(px=>pts.forEach(py=>res.push([px,py]))); res.push([9,9]); return res }
+      return []
+    }
+
+    function letters(){
+      // Go coordinates typically skip I; we'll follow that
+      const alphabet = 'ABCDEFGHJKLMNOPQRSTUVWXZ';
+      return alphabet.split('').slice(0,S.N);
+    }
+    function coordLabel(x,y){ return letters()[x] + (S.N - y) }
+
+    function canvasToPoint(e){
+      const rect = canvas.getBoundingClientRect();
+      const px = (e.clientX - rect.left) * (canvas.width/rect.width);
+      const py = (e.clientY - rect.top) * (canvas.height/rect.height);
+      const pad = 40; const step = (canvas.width - pad*2)/(S.N-1);
+      const x = Math.round((px - pad)/step);
+      const y = Math.round((py - pad)/step);
+      return [x,y];
+    }
+
+    canvas.addEventListener('click', (e)=>{
+      const [x,y] = canvasToPoint(e);
+      if(!inb(x,y)) return;
+      if(place(x,y)) { /* handled */ }
+    });
+
+    passBtn.addEventListener('click', pass);
+    undoBtn.addEventListener('click', undo);
+    newBtn.addEventListener('click', ()=> init(parseInt(sizeSelect.value,10)));
+    sizeSelect.addEventListener('change', ()=> init(parseInt(sizeSelect.value,10)));
+    toggleCoord.addEventListener('click', ()=>{ S.showCoords=!S.showCoords; coordTag.style.display=S.showCoords?'inline-block':'none'; draw(); });
+
+    scoreBtn.addEventListener('click', ()=> score(false));
+
+    function score(fromAuto){
+      const n=S.N; const visited=new Set();
+      let terrB=0, terrW=0;
+      for(let y=0;y<n;y++){
+        for(let x=0;x<n;x++){
+          const k=idx(x,y); if(S.board[k]!==0 || visited.has(k)) continue;
+          const region=[]; const stack=[[x,y]]; const owners=new Set();
+          while(stack.length){
+            const [cx,cy]=stack.pop(); const ck=idx(cx,cy); if(visited.has(ck)) continue; visited.add(ck); region.push(ck);
+            for(const [nx,ny] of neighbors(cx,cy)){
+              const v=S.board[idx(nx,ny)];
+              if(v===0){ if(!visited.has(idx(nx,ny))) stack.push([nx,ny]); }
+              else owners.add(v);
+            }
+          }
+          if(owners.size===1){ const owner=[...owners][0]; if(owner===1) terrB+=region.length; else terrW+=region.length; }
+        }
+      }
+      // stones on board
+      let stonesB=0, stonesW=0;
+      for(const v of S.board){ if(v===1) stonesB++; else if(v===2) stonesW++; }
+      const scoreB = stonesB + terrB; const scoreW = stonesW + terrW;
+      const diff = scoreB - scoreW;
+      const winner = diff>0? 'Black' : diff<0? 'White' : 'Tie';
+      scorePanel.textContent = `B ${scoreB} (stones ${stonesB} + terr ${terrB}) · W ${scoreW} (stones ${stonesW} + terr ${terrW}) → ${winner}${winner==='Tie'?'': ' by '+Math.abs(diff)}`;
+      updateUI('Scored (Chinese area).');
+      drawTerritoryOverlay(terrMap());
+      if(fromAuto){ updateUI('Both players passed. Final score shown. You may undo to continue.'); }
+    }
+
+    function terrMap(){
+      const n=S.N; const visited=new Set(); const owners = new Map();
+      for(let y=0;y<n;y++){
+        for(let x=0;x<n;x++){
+          const k=idx(x,y); if(S.board[k]!==0 || visited.has(k)) continue;
+          const region=[]; const stack=[[x,y]]; const adjOwners=new Set();
+          while(stack.length){
+            const [cx,cy]=stack.pop(); const ck=idx(cx,cy); if(visited.has(ck)) continue; visited.add(ck); region.push(ck);
+            for(const [nx,ny] of neighbors(cx,cy)){
+              const v=S.board[idx(nx,ny)];
+              if(v===0){ if(!visited.has(idx(nx,ny))) stack.push([nx,ny]); }
+              else adjOwners.add(v);
+            }
+          }
+          if(adjOwners.size===1){ const owner=[...adjOwners][0]; for(const c of region) owners.set(c, owner); }
+        }
+      }
+      return owners;
+    }
+
+    function drawTerritoryOverlay(owners){
+      const n=S.N; const w=canvas.width, h=canvas.height; const pad=40; const stepX=(w-pad*2)/(n-1), stepY=stepX;
+      ctx.save();
+      for(let y=0;y<n;y++){
+        for(let x=0;x<n;x++){
+          const k=idx(x,y);
+          if(S.board[k]!==0) continue;
+          const owner = owners.get(k);
+          if(!owner) continue;
+          const cx = pad + x*stepX; const cy = pad + y*stepY;
+          ctx.beginPath(); ctx.arc(cx, cy, stepX*0.18, 0, Math.PI*2);
+          ctx.fillStyle = owner===1? 'rgba(34,197,94,.45)' : 'rgba(59,130,246,.45)';
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    function updateUI(msg){
+      turnLabel.textContent = S.turn===1? 'Black' : 'White';
+      capB.textContent = S.caps[1]; capW.textContent = S.caps[2];
+      statusEl.textContent = msg;
+    }
+
+    // start
+    init(19);
+  })();
+  </script>
+</body>
+</html>
