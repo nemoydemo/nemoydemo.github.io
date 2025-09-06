@@ -99,13 +99,11 @@
 <body>
 
 <!-- Mood Sliders Container -->
-<div style="position:absolute; top:0; left:35%; transform:translateX(-50%); text-align:center; z-index:9999; padding:6px; background:rgba(0,0,0,0.2); border-radius:8px;">
-
-  <div style="display:flex; gap:20px; justify-content:center; align-items:flex-start;">
-
+<div class="slider-container">
+  <div class="slider-group">
     <!-- Angélica -->
     <div>
-      <label for="angelicaMood" style="color:#ffffff; font-size:11px; display:block; margin-bottom:2px;">Angélica</label>
+      <label for="angelicaMood">Angélica</label>
       <input type="range" id="angelicaMood" min="1" max="10" step="1" class="mood-slider">
       <div class="slider-steps">
         <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
@@ -115,90 +113,143 @@
 
     <!-- Selene -->
     <div>
-      <label for="seleneMood" style="color:#ffffff; font-size:11px; display:block; margin-bottom:2px;">Selene</label>
+      <label for="seleneMood">Selene</label>
       <input type="range" id="seleneMood" min="1" max="10" step="1" class="mood-slider">
       <div class="slider-steps">
         <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
         <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
       </div>
     </div>
-
   </div>
 
-  <!-- Title below both sliders -->
-  <div style="margin-top:12px; font-size:14px; color:#ffffff; font-weight:bold;">
+  <!-- Title -->
+  <div class="slider-title">
     Nivel de perro
   </div>
 </div>
 
 <style>
-  /* Mood slider styling */
-  .mood-slider {
-    width: 150px;
-    margin: 0;
-    -webkit-appearance: none;
-    appearance: none;
-    height: 6px;
-    border-radius: 3px;
-    background: #555;
-    outline: none;
-    position: relative;
-  }
+/* Container */
+.slider-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 9999;
+  padding: 6px 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  font-family: sans-serif;
+}
 
-  /* Thumb */
-  .mood-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #ffffff;
-    cursor: pointer;
-    border: 2px solid #4caf50;
-    margin-top: -4px;
-    position: relative;
-    z-index: 3;
-  }
+/* Flex layout for sliders */
+.slider-group {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+}
 
-  /* Steps (numbers below) */
-  .slider-steps {
-    display: flex;
-    justify-content: space-between;
-    font-size: 9px;
-    color: #ffffff;
-    margin-top: 2px;
-    width: 150px;
-  }
+/* Labels */
+.slider-container label {
+  color: #ffffff;
+  font-size: 11px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Mood slider - base track */
+.mood-slider {
+  width: 150px;
+  height: 6px;
+  border-radius: 3px;
+  background: #555;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Webkit thumb (Chrome, Safari, iOS) */
+.mood-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #4caf50;
+  cursor: pointer;
+  margin-top: -4px; /* centers thumb */
+  position: relative;
+  z-index: 3;
+}
+
+/* Firefox thumb */
+.mood-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid white;
+  cursor: pointer;
+}
+
+/* IE/Edge thumb */
+.mood-slider::-ms-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #4caf50;
+  cursor: pointer;
+}
+
+/* Steps below slider */
+.slider-steps {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #ffffff;
+  margin-top: 2px;
+  width: 150px;
+}
+
+/* Title */
+.slider-title {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: bold;
+}
 </style>
 
 <script>
-  const angelicaMood = document.getElementById("angelicaMood");
-  const seleneMood = document.getElementById("seleneMood");
+const angelicaMood = document.getElementById("angelicaMood");
+const seleneMood = document.getElementById("seleneMood");
 
-  // Load saved values (default = 5)
-  angelicaMood.value = localStorage.getItem("moodAngelica") || 5;
-  seleneMood.value = localStorage.getItem("moodSelene") || 5;
+// Load saved values (default = 5)
+angelicaMood.value = localStorage.getItem("moodAngelica") || 5;
+seleneMood.value = localStorage.getItem("moodSelene") || 5;
 
-  // Save on change
-  angelicaMood.addEventListener("input", () => {
-    localStorage.setItem("moodAngelica", angelicaMood.value);
-    updateSliderTrack(angelicaMood);
-  });
-  seleneMood.addEventListener("input", () => {
-    localStorage.setItem("moodSelene", seleneMood.value);
-    updateSliderTrack(seleneMood);
-  });
-
-  function updateSliderTrack(slider) {
-    const percentage = ((slider.value - 1) / 9) * 100; // 1–10 scale
-    slider.style.background = `linear-gradient(to right, #25334d 0%, #25334d ${percentage}%, #555 ${percentage}%, #555 100%)`;
-  }
-
-  // Initialize colors
+// Save & update color
+angelicaMood.addEventListener("input", () => {
+  localStorage.setItem("moodAngelica", angelicaMood.value);
   updateSliderTrack(angelicaMood);
+});
+seleneMood.addEventListener("input", () => {
+  localStorage.setItem("moodSelene", seleneMood.value);
   updateSliderTrack(seleneMood);
-</script>
+});
 
+function updateSliderTrack(slider) {
+  const percentage = ((slider.value - 1) / 9) * 100;
+  slider.style.background = `linear-gradient(to right, #25334d 0%, #25334d ${percentage}%, #555 ${percentage}%, #555 100%)`;
+}
+
+// Init
+updateSliderTrack(angelicaMood);
+updateSliderTrack(seleneMood);
+</script>
 
 
   <!-- Redirect button -->
