@@ -94,6 +94,8 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+
 </head>
 
 <body>
@@ -335,18 +337,121 @@ updateSliderTrack(seleneMood);
   <div class="definition" id="definition"></div>
   <button onclick="getRandomWord()">Refresh Word</button>
 
-  <!-- Response form -->
-  <div class="response-box">
-    <label for="nameSelect"><strong>Who are you?</strong></label>
-    <select id="nameSelect">
-      <option value="Selene">Selene</option>
-      <option value="Angelica">Angélica</option>
-    </select>
+<div class="response-box">
+  <label for="nameSelect"><strong>Who are you?</strong></label>
+  <select id="nameSelect">
+    <option value="Selene">Selene</option>
+    <option value="Angelica">Angélica</option>
+  </select>
 
-    <textarea id="responseInput" placeholder="Write your thoughts..."></textarea>
-    <br>
-    <button id="submitBtn">Submit</button>
-  </div>
+  <textarea id="responseInput" placeholder="Write your thoughts..."></textarea>
+  <br>
+
+  <!-- Recording controls -->
+<button id="recordBtn" style="background-color: #25334d; color: white; font-size: 14px; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;">
+  🎤 Record
+</button>
+  <button id="stopBtn" style="background-color: #25334d; color: white; font-size: 14px; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;">⏹ Stop</button>
+  <span id="recordingStatus"></span>
+  <div id="audioPreview" style="margin-top:10px; background-color:#4f5f7d;"></div>
+
+  <br><br>
+  <button id="submitBtn">Submit</button>
+</div>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let audioBase64 = null; // Store audio as Base64
+const recordBtn = document.getElementById("recordBtn");
+const stopBtn = document.getElementById("stopBtn");
+const recordingStatus = document.getElementById("recordingStatus");
+const audioPreview = document.getElementById("audioPreview");
+const submitBtn = document.getElementById("submitBtn");
+const responseInput = document.getElementById("responseInput");
+
+// RECORD AUDIO
+recordBtn.addEventListener("click", async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+    mediaRecorder.onstart = () => {
+      recordingStatus.textContent = "Recording...";
+      recordBtn.disabled = true;
+      stopBtn.disabled = false;
+    };
+
+    mediaRecorder.onstop = () => {
+      recordingStatus.textContent = "Recording stopped. Preview below:";
+      recordBtn.disabled = false;
+      stopBtn.disabled = true;
+
+      const audioBlob = new Blob(audioChunks, { type: "audio/mpeg" });
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = () => {
+        audioBase64 = reader.result; // save Base64 string
+
+        const audioEl = document.createElement("audio");
+        audioEl.controls = true;
+        audioEl.src = audioBase64;
+        audioPreview.innerHTML = "";
+        audioPreview.appendChild(audioEl);
+      };
+    };
+
+    mediaRecorder.start();
+  } catch (err) {
+    console.error(err);
+    alert("Cannot access microphone. Use HTTPS or localhost and allow permission.");
+  }
+});
+
+stopBtn.addEventListener("click", () => {
+  if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+});
+
+// SUBMIT RESPONSE
+submitBtn.addEventListener("click", async () => {
+  const name = document.getElementById("nameSelect").value;
+  const text = responseInput.value.trim();
+
+  if (!text && !audioBase64) {
+    alert("Write a message or record audio!");
+    return;
+  }
+
+  try {
+    // Ensure currentWord exists
+    if (!currentWord) currentWord = document.getElementById("wordBox").textContent || "NoWord";
+
+    await db.collection("responses").add({
+      word: currentWord,
+      name,
+      text: text || null,
+      audioBase64: audioBase64 || null, // store Base64
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Clear inputs
+    responseInput.value = "";
+    audioBase64 = null;
+    audioPreview.innerHTML = "";
+    recordingStatus.textContent = "";
+
+    alert("Response submitted successfully!");
+  } catch (err) {
+    console.error("Error submitting response:", err);
+    alert("Error submitting response. See console.");
+  }
+});
+
+
+</script>
 
   <!-- History -->
   <div class="history">
@@ -396,20 +501,27 @@ updateSliderTrack(seleneMood);
       }
     }
 
-    async function submitResponse() {
-      const name = document.getElementById("nameSelect").value;
-      const text = document.getElementById("responseInput").value.trim();
-      if (!text) return;
+  async function submitResponse() {
+  const name = document.getElementById("nameSelect").value;
+  const text = document.getElementById("responseInput").value.trim();
 
-      await db.collection("responses").add({
-        word: currentWord,
-        name,
-        text,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
+  if (!text && !recordedAudioUrl) return; // Prevent empty post
 
-      document.getElementById("responseInput").value = "";
-    }
+  await db.collection("responses").add({
+    word: currentWord,
+    name,
+    text: text || null,
+    audioUrl: recordedAudioUrl || null,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Clear inputs
+  document.getElementById("responseInput").value = "";
+  recordedAudioUrl = null;
+  recordingStatus.textContent = "";
+}
+
+
 
     function addCommentBox(docId, entryDiv) {
       const wrapper = document.createElement("div");
@@ -466,55 +578,72 @@ updateSliderTrack(seleneMood);
     }
 
     function loadHistory() {
-      db.collection("responses")
-        .orderBy("timestamp", "desc")
-        .onSnapshot(snapshot => {
-          const historyList = document.getElementById("historyList");
-          historyList.innerHTML = "";
+  db.collection("responses")
+    .orderBy("timestamp", "desc")
+    .onSnapshot(snapshot => {
+      const historyList = document.getElementById("historyList");
+      historyList.innerHTML = "";
 
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            const div = document.createElement("div");
-            div.className = "entry";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "entry";
 
-            const nameHtml = `<strong>${data.word} – ${data.name}</strong>`;
-            let content = "";
+        // Name and Word
+        const nameHtml = `<strong>${data.word} – ${data.name}</strong>`;
 
-            const spotifyRegex = /(https?:\/\/open\.spotify\.com\/[^\s]+)/;
-            const youtubeRegex = /(https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([^\s&]+)|https?:\/\/youtu\.be\/([^\s&]+))/;
+        // Build content
+        let content = "";
 
-            if (spotifyRegex.test(data.text)) {
-              const match = data.text.match(spotifyRegex);
-              const embedUrl = match[1].replace("open.spotify.com", "open.spotify.com/embed");
+        // 1️⃣ Audio (Base64) if exists
+        if (data.audioBase64) {
+          content += `<audio controls src="${data.audioBase64}" style="width:50%; margin-top:4px;"></audio>`;
+        }
 
-              content = `<iframe style="border-radius:12px"
-                          src="${embedUrl}"
-                          width="50%"
-                          height="100"
-                          frameborder="0"
-                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-                        </iframe>`;
-            } else if (youtubeRegex.test(data.text)) {
-              const match = data.text.match(youtubeRegex);
-              const videoId = match[2] || match[3];
-              const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        // 2️⃣ Text if exists
+        if (data.text) {
+          content += `<div style="margin-top:4px;">${data.text}</div>`;
+        }
 
-              content = `<iframe width="560" height="315"
-                          src="${embedUrl}"
-                          frameborder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowfullscreen>
-                        </iframe>`;
-            } else {
-              content = `<span>${data.text}</span>`;
-            }
+        // 3️⃣ Optional: Detect Spotify / YouTube links in text
+        const spotifyRegex = /(https?:\/\/open\.spotify\.com\/[^\s]+)/;
+        const youtubeRegex = /(https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([^\s&]+)|https?:\/\/youtu\.be\/([^\s&]+))/;
 
-            div.innerHTML = `${nameHtml}<br>${content}`;
-            historyList.appendChild(div);
-            addCommentBox(doc.id, div);
-          });
-        });
-    }
+        if (data.text) {
+          if (spotifyRegex.test(data.text)) {
+            const match = data.text.match(spotifyRegex);
+            const embedUrl = match[1].replace("open.spotify.com", "open.spotify.com/embed");
+            content = `<iframe style="border-radius:12px"
+                        src="${embedUrl}"
+                        width="50%"
+                        height="100"
+                        frameborder="0"
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+                      </iframe>`;
+          } else if (youtubeRegex.test(data.text)) {
+            const match = data.text.match(youtubeRegex);
+            const videoId = match[2] || match[3];
+            const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            content = `<iframe width="560" height="315"
+                        src="${embedUrl}"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                      </iframe>`;
+          }
+        }
+
+        // Render entry
+        div.innerHTML = `${nameHtml}<br>${content}`;
+        historyList.appendChild(div);
+
+        // Add comment box (existing function)
+        addCommentBox(doc.id, div);
+      });
+    });
+}
+
+
 
     (async () => {
       const word = await getRandomWord();
