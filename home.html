@@ -254,24 +254,40 @@ updateSliderTrack(seleneMood);
 </script>
 
 
-  <!-- Redirect button -->
-  <div style="text-align: right; margin: 12px 0;">
-    <button id="redirectBtn" style="
-        background-color: #25334d;
-        color: white;
-        padding: 5px 10px;
-        border: none;
-        border-radius: 8px;
-        font-size: 12px;
-        cursor: pointer;
-    ">Play Go</button>
-  </div>
+  <!-- Go button -->
+<div style="text-align: right; margin: 12px 0;">
+  <button id="redirectBtn" style="
+      background-color: #25334d;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+  ">Play Go</button>
 
-  <script>
-    document.getElementById('redirectBtn').addEventListener('click', () => {
-      window.location.href = 'go.html';
-    });
-  </script>
+  <!-- Player button -->
+  <button id="playerBtn" style="
+      background-color: #25334d;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 6px;
+  ">Watch Breaking Bad</button>
+</div>
+
+<script>
+  document.getElementById('redirectBtn').addEventListener('click', () => {
+    window.location.href = 'go.html';
+  });
+
+  document.getElementById('playerBtn').addEventListener('click', () => {
+    window.location.href = 'https://vimeo.com/721816144';
+  });
+</script>
 
   <!-- Audio -->
   <div class="top-right">
@@ -302,19 +318,19 @@ updateSliderTrack(seleneMood);
 
   <!-- Countdown -->
   <div class="countdown-container">
-    <div class="countdown-title">Days left until reunion: </div>
+    <div class="countdown-title">Days left until birthday: </div>
     <div id="countdown">Loading...</div>
   </div>
 
   <script>
-    const targetDate = new Date(new Date().getFullYear(), 8, 9, 0, 0, 0); // Sept 9
+    const targetDate = new Date(new Date().getFullYear(), 9, 3, 0, 0, 0);
 
     function updateCountdown() {
       const now = new Date();
       let diff = targetDate - now;
 
       if (diff <= 0) {
-        document.getElementById("countdown").innerHTML = "🎉 It's September 9! 🎉";
+        document.getElementById("countdown").innerHTML = "🎉 Happy Birthday! 🎉";
         clearInterval(interval);
         return;
       }
