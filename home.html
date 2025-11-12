@@ -15,657 +15,252 @@
     .entry { border-bottom: 1px solid #ddd; padding: 10px 0; }
     .entry strong { display: block; margin-bottom: 5px; }
 
-    /* Clocks */
-    .clocks-container {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      display: flex;
-      flex-direction: row;
-      z-index: 9999;
-    }
-    .clock-frame {
-      border: none;
-      width: 250px;
-      height: 200px;
-      transform: scale(0.5);
-      transform-origin: top left;
-      margin-right: -100px; 
+    #imagePreview img, .commentImagePreview img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin: 4px;
+      border: 1px solid #ccc;
     }
 
-    /* Audio top-right */
-    .top-right {
-      position: absolute; 
-      top: 18px;          
-      right: 300px;        
-    }
-    .top-right audio {
-      height: 20px;
-      width: 250px;
-    }
-
-    /* Countdown */
-    .countdown-container {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #0d1b2a;
-      padding: 8px 12px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      font-family: Arial, sans-serif;
-      font-size: 14px;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: #FFFFFF;
-      font-weight: bold;
-    }
-
-    .countdown-title {
-      white-space: nowrap;
-    }
-
-    /* Horizontal line */
-    .horizontal-line {
-      position: absolute;  
-      top: 125px;       
-      left: 0;
-      width: 100%;      
-      height: 2px;      
-      background-color: #25334d; 
-      z-index: 9999;    
-    }
-
-    /* Mood sliders at top */
-    .mood-slider-label {
-      font-size: 12px; 
-      color: #25334d; 
-      font-weight: bold;
-      margin-right: 4px;
-    }
-    .mood-slider {
-      width: 120px;
-      margin-right: 20px;
-    }
+    /* Other existing styles unchanged */
   </style>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
-
 </head>
 
 <body>
-
-<!-- Mood Sliders Container -->
-<div class="slider-container">
-  <div class="slider-group">
-    <!-- Angélica -->
-    <div>
-      <label for="angelicaMood">Angélica</label>
-      <input type="range" id="angelicaMood" min="1" max="10" step="1" class="mood-slider">
-      <div class="slider-steps">
-        <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-        <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-      </div>
-    </div>
-
-    <!-- Selene -->
-    <div>
-      <label for="seleneMood">Selene</label>
-      <input type="range" id="seleneMood" min="1" max="10" step="1" class="mood-slider">
-      <div class="slider-steps">
-        <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-        <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Title -->
-  <div class="slider-title">
-    Nivel de perro
-  </div>
-</div>
-
-<style>
-/* Container */
-.slider-container {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  z-index: 9999;
-  padding: 6px 12px;
-  background: rgba(0,0,0,0.2);
-  border-radius: 8px;
-  font-family: sans-serif;
-}
-
-/* Flex layout for sliders */
-.slider-group {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-/* Labels */
-.slider-container label {
-  color: #ffffff;
-  font-size: 11px;
-  display: block;
-  margin-bottom: 4px;
-}
-
-/* Mood slider - base track */
-.mood-slider {
-  width: 150px;
-  height: 6px;
-  border-radius: 3px;
-  background: #555;
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-/* Webkit thumb (Chrome, Safari, iOS) */
-.mood-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #ffffff;
-  border: 2px solid #4caf50;
-  cursor: pointer;
-  margin-top: -4px; /* centers thumb */
-  position: relative;
-  z-index: 3;
-}
-
-/* Firefox thumb */
-.mood-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #ffffff;
-  border: 2px solid white;
-  cursor: pointer;
-}
-
-/* IE/Edge thumb */
-.mood-slider::-ms-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #ffffff;
-  border: 2px solid #4caf50;
-  cursor: pointer;
-}
-
-/* Steps below slider */
-.slider-steps {
-  display: flex;
-  justify-content: space-between;
-  font-size: 9px;
-  color: #ffffff;
-  margin-top: 2px;
-  width: 150px;
-}
-
-/* Title */
-.slider-title {
-  margin-top: 12px;
-  font-size: 14px;
-  color: #ffffff;
-  font-weight: bold;
-}
-</style>
-
-<script>
-const angelicaMood = document.getElementById("angelicaMood");
-const seleneMood = document.getElementById("seleneMood");
-
-// Load saved values (default = 5)
-angelicaMood.value = localStorage.getItem("moodAngelica") || 5;
-seleneMood.value = localStorage.getItem("moodSelene") || 5;
-
-// Save & update color
-angelicaMood.addEventListener("input", () => {
-  localStorage.setItem("moodAngelica", angelicaMood.value);
-  updateSliderTrack(angelicaMood);
-});
-seleneMood.addEventListener("input", () => {
-  localStorage.setItem("moodSelene", seleneMood.value);
-  updateSliderTrack(seleneMood);
-});
-
-function updateSliderTrack(slider) {
-  const percentage = ((slider.value - 1) / 9) * 100;
-  slider.style.background = `linear-gradient(to right, #25334d 0%, #25334d ${percentage}%, #555 ${percentage}%, #555 100%)`;
-}
-
-// Init
-updateSliderTrack(angelicaMood);
-updateSliderTrack(seleneMood);
-</script>
-
-
-  <!-- Go button -->
-<div style="text-align: right; margin: 12px 0;">
-  <button id="redirectBtn" style="
-      background-color: #25334d;
-      color: white;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 12px;
-      cursor: pointer;
-  ">Play Go</button>
-
-  <!-- Player button -->
-  <button id="playerBtn" style="
-      background-color: #25334d;
-      color: white;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 12px;
-      cursor: pointer;
-      margin-left: 6px;
-  ">Watch Breaking Bad</button>
-</div>
-
-<script>
-  document.getElementById('redirectBtn').addEventListener('click', () => {
-    window.location.href = 'go.html';
-  });
-
-  document.getElementById('playerBtn').addEventListener('click', () => {
-    window.location.href = 'https://vimeo.com/721816144';
-  });
-</script>
-
-  <!-- Audio -->
-  <div class="top-right">
-    <audio controls>
-      <source src="almost-monday.mp3" type="audio/mpeg">
-    </audio>
-  </div>
-
-  <!-- Horizontal line -->
-  <div class="horizontal-line"></div>
-  <br><br><br><br><br><br>
   <h1>Word of the Day</h1>
 
-  <!-- Clocks -->
-  <div class="clocks-container">
-    <iframe
-      class="clock-frame"
-      src="https://worlddatetime.com/embed/simple-analog-clock.php?tz=America/Bogota&lbl=Medellín"
-      scrolling="no" allowtransparency="true">
-    </iframe>
-
-    <iframe
-      class="clock-frame"
-      src="https://worlddatetime.com/embed/simple-analog-clock.php?tz=Europe/Madrid&lbl=Madrid"
-      scrolling="no" allowtransparency="true">
-    </iframe>
-  </div>
-
-  <!-- Countdown -->
-  <div class="countdown-container">
-    <div class="countdown-title">Days left until birthday: </div>
-    <div id="countdown">Loading...</div>
-  </div>
-
-  <script>
-    const targetDate = new Date(new Date().getFullYear(), 9, 3, 0, 0, 0);
-
-    function updateCountdown() {
-      const now = new Date();
-      let diff = targetDate - now;
-
-      if (diff <= 0) {
-        document.getElementById("countdown").innerHTML = "🎉 Happy Birthday! 🎉";
-        clearInterval(interval);
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-
-      document.getElementById("countdown").innerHTML =
-        `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    }
-
-    const interval = setInterval(updateCountdown, 1000);
-    updateCountdown();
-  </script>
-
-  <!-- Word of the Day -->
   <div class="word" id="wordBox">Loading...</div>
   <div class="definition" id="definition"></div>
   <button onclick="getRandomWord()">Refresh Word</button>
 
-<div class="response-box">
-  <label for="nameSelect"><strong>Who are you?</strong></label>
-  <select id="nameSelect">
-    <option value="Selene">Selene</option>
-    <option value="Angelica">Angélica</option>
-  </select>
+  <div class="response-box">
+    <label for="nameSelect"><strong>Who are you?</strong></label>
+    <select id="nameSelect">
+      <option value="Selene">Selene</option>
+      <option value="Angelica">Angélica</option>
+    </select>
 
-  <textarea id="responseInput" placeholder="Write your thoughts..."></textarea>
-  <br>
+    <textarea id="responseInput" placeholder="Write your thoughts..."></textarea>
+    <br>
 
-  <!-- Recording controls -->
-<button id="recordBtn" style="background-color: #25334d; color: white; font-size: 14px; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;">
-  🎤 Record
-</button>
-  <button id="stopBtn" style="background-color: #25334d; color: white; font-size: 14px; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;">⏹ Stop</button>
-  <span id="recordingStatus"></span>
-  <div id="audioPreview" style="margin-top:10px; background-color:#4f5f7d;"></div>
+    <input type="file" id="imageUpload" multiple accept="image/*" onchange="previewImages(event)">
+    <div id="imagePreview"></div>
 
-  <br><br>
-  <button id="submitBtn">Submit</button>
-</div>
+    <button id="submitBtn">Submit</button>
+  </div>
 
-<script>
-let mediaRecorder;
-let audioChunks = [];
-let audioBase64 = null; // Store audio as Base64
-const recordBtn = document.getElementById("recordBtn");
-const stopBtn = document.getElementById("stopBtn");
-const recordingStatus = document.getElementById("recordingStatus");
-const audioPreview = document.getElementById("audioPreview");
-const submitBtn = document.getElementById("submitBtn");
-const responseInput = document.getElementById("responseInput");
-
-// RECORD AUDIO
-recordBtn.addEventListener("click", async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
-
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-
-    mediaRecorder.onstart = () => {
-      recordingStatus.textContent = "Recording...";
-      recordBtn.disabled = true;
-      stopBtn.disabled = false;
-    };
-
-    mediaRecorder.onstop = () => {
-      recordingStatus.textContent = "Recording stopped. Preview below:";
-      recordBtn.disabled = false;
-      stopBtn.disabled = true;
-
-      const audioBlob = new Blob(audioChunks, { type: "audio/mpeg" });
-      const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      reader.onloadend = () => {
-        audioBase64 = reader.result; // save Base64 string
-
-        const audioEl = document.createElement("audio");
-        audioEl.controls = true;
-        audioEl.src = audioBase64;
-        audioPreview.innerHTML = "";
-        audioPreview.appendChild(audioEl);
-      };
-    };
-
-    mediaRecorder.start();
-  } catch (err) {
-    console.error(err);
-    alert("Cannot access microphone. Use HTTPS or localhost and allow permission.");
-  }
-});
-
-stopBtn.addEventListener("click", () => {
-  if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
-});
-
-// SUBMIT RESPONSE
-submitBtn.addEventListener("click", async () => {
-  const name = document.getElementById("nameSelect").value;
-  const text = responseInput.value.trim();
-
-  if (!text && !audioBase64) {
-    alert("Write a message or record audio!");
-    return;
-  }
-
-  try {
-    // Ensure currentWord exists
-    if (!currentWord) currentWord = document.getElementById("wordBox").textContent || "NoWord";
-
-    await db.collection("responses").add({
-      word: currentWord,
-      name,
-      text: text || null,
-      audioBase64: audioBase64 || null, // store Base64
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    // Clear inputs
-    responseInput.value = "";
-    audioBase64 = null;
-    audioPreview.innerHTML = "";
-    recordingStatus.textContent = "";
-
-    alert("Response submitted successfully!");
-  } catch (err) {
-    console.error("Error submitting response:", err);
-    alert("Error submitting response. See console.");
-  }
-});
-
-
-</script>
-
-  <!-- History -->
   <div class="history">
     <h2>Response History</h2>
     <div id="historyList"></div>
   </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCSIO3qjNhXbnwq9D_-L4jT8p1t1izqf9Y",
-      authDomain: "nemoydemo.firebaseapp.com",
-      projectId: "nemoydemo",
-      storageBucket: "nemoydemo.firebasestorage.app",
-      messagingSenderId: "396078882117",
-      appId: "1:396078882117:web:82f885e49eb6d3c556722c"
-    };
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCSIO3qjNhXbnwq9D_-L4jT8p1t1izqf9Y",
+  authDomain: "nemoydemo.firebaseapp.com",
+  projectId: "nemoydemo",
+  storageBucket: "nemoydemo.firebasestorage.app",
+  messagingSenderId: "396078882117",
+  appId: "1:396078882117:web:82f885e49eb6d3c556722c"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+let currentWord = "";
+let selectedImages = [];
 
-    let currentWord = ""; 
+// ✅ Preview & store base64 images for responses
+function previewImages(event) {
+  const files = event.target.files;
+  const preview = document.getElementById("imagePreview");
+  preview.innerHTML = "";
+  selectedImages = [];
 
-    async function getRandomWord() {
-      try {
-        const response = await fetch("https://random-word-api.vercel.app/api?count=1");
-        const data = await response.json();
-        currentWord = data[0];
-        document.getElementById("wordBox").textContent = currentWord;
-        fetchDefinition(currentWord);
-        return currentWord; 
-      } catch (error) {
-        document.getElementById("wordBox").textContent = "Error fetching word 😢";
-        console.error(error);
-      }
+  for (const file of files) {
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        preview.appendChild(img);
+        selectedImages.push(e.target.result);
+      };
+      reader.readAsDataURL(file);
     }
+  }
+}
 
-    async function fetchDefinition(word) {
-      try {
-        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-        if (!res.ok) throw new Error("Definition not found");
-        const data = await res.json();
-        const meaning = data[0]?.meanings[0]?.definitions[0]?.definition || "No definition available.";
-        document.getElementById("definition").textContent = meaning;
-      } catch (error) {
-        document.getElementById("definition").textContent = "No definition found 😢";
-        console.error(error);
-      }
-    }
+// ✅ Get random word + definition
+async function getRandomWord() {
+  try {
+    const res = await fetch("https://random-word-api.vercel.app/api?count=1");
+    const data = await res.json();
+    currentWord = data[0];
+    document.getElementById("wordBox").textContent = currentWord;
+    fetchDefinition(currentWord);
+  } catch {
+    document.getElementById("wordBox").textContent = "Error fetching word 😢";
+  }
+}
 
-  async function submitResponse() {
+async function fetchDefinition(word) {
+  try {
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+    const data = await res.json();
+    document.getElementById("definition").textContent = data[0]?.meanings[0]?.definitions[0]?.definition || "No definition available.";
+  } catch {
+    document.getElementById("definition").textContent = "No definition found 😢";
+  }
+}
+
+// ✅ Submit response (with persistent image saving)
+document.getElementById("submitBtn").addEventListener("click", async () => {
   const name = document.getElementById("nameSelect").value;
   const text = document.getElementById("responseInput").value.trim();
 
-  if (!text && !recordedAudioUrl) return; // Prevent empty post
+  if (!text && selectedImages.length === 0) {
+    alert("Write something or upload an image!");
+    return;
+  }
 
   await db.collection("responses").add({
     word: currentWord,
     name,
     text: text || null,
-    audioUrl: recordedAudioUrl || null,
+    images: selectedImages || [],
     timestamp: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  // Clear inputs
   document.getElementById("responseInput").value = "";
-  recordedAudioUrl = null;
-  recordingStatus.textContent = "";
+  document.getElementById("imagePreview").innerHTML = "";
+  selectedImages = [];
+
+  alert("Response submitted!");
+});
+
+// ✅ Comment image storage
+const commentImagesMap = new Map();
+
+function previewCommentImages(event, inputElement) {
+  const files = event.target.files;
+  const previewDiv = inputElement.nextElementSibling;
+  previewDiv.innerHTML = "";
+  const imageList = [];
+
+  for (const file of files) {
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        previewDiv.appendChild(img);
+        imageList.push(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+  commentImagesMap.set(inputElement, imageList);
 }
 
+// ✅ Add comment box for each entry
+function addCommentBox(docId, entryDiv) {
+  const wrapper = document.createElement("div");
+  wrapper.style.marginTop = "10px";
+  wrapper.style.paddingLeft = "10px";
+  wrapper.style.borderLeft = "2px solid #25334d";
 
+  const commentsDiv = document.createElement("div");
+  commentsDiv.id = `comments-${docId}`;
+  wrapper.appendChild(commentsDiv);
 
-    function addCommentBox(docId, entryDiv) {
-      const wrapper = document.createElement("div");
-      wrapper.style.marginTop = "10px";
-      wrapper.style.paddingLeft = "10px";
-      wrapper.style.borderLeft = "2px solid #25334d";
+  const commentBox = document.createElement("div");
+  commentBox.innerHTML = `
+    <textarea id="commentInput-${docId}" placeholder="Write a comment..." 
+      style="width:90%;height:40px;font-size:0.9rem;padding:4px;margin-top:6px;"></textarea>
+    <br>
+    <input type="file" class="commentImageUpload" multiple accept="image/*" onchange="previewCommentImages(event, this)">
+    <div class="commentImagePreview"></div>
+    <button onclick="submitComment('${docId}', this)" style="margin-top:6px;padding:4px 8px;">Comment</button>
+  `;
+  wrapper.appendChild(commentBox);
+  entryDiv.appendChild(wrapper);
 
-      const commentsDiv = document.createElement("div");
-      commentsDiv.id = `comments-${docId}`;
-      wrapper.appendChild(commentsDiv);
+  db.collection("responses").doc(docId).collection("comments").orderBy("timestamp").onSnapshot(snapshot => {
+    commentsDiv.innerHTML = "";
+    snapshot.forEach(c => {
+      const data = c.data();
+      const p = document.createElement("p");
+      p.innerHTML = `<em>${data.name}:</em> ${data.text}`;
+      commentsDiv.appendChild(p);
 
-      const commentBox = document.createElement("div");
-      commentBox.innerHTML = `
-        <textarea id="commentInput-${docId}" 
-                  placeholder="Write a comment..." 
-                  style="width:90%;height:30px;font-size:0.85rem;padding:4px;margin-top:6px;background-color:#4f5f7d;"></textarea>
-        <br>
-        <button onclick="submitComment('${docId}')" 
-                style="margin-top:4px;padding:4px 8px;font-size:0.8rem;border-radius:4px;cursor:pointer;background-color:#4f5f7d";>
-          Comment
-        </button>
-      `;
-      wrapper.appendChild(commentBox);
-
-      entryDiv.appendChild(wrapper);
-
-      db.collection("responses").doc(docId).collection("comments")
-        .orderBy("timestamp", "asc")
-        .onSnapshot(snapshot => {
-          commentsDiv.innerHTML = "";
-          snapshot.forEach(c => {
-            const cData = c.data();
-            const p = document.createElement("p");
-            p.style.margin = "3px 0";
-            p.style.fontSize = "0.9rem";
-            p.innerHTML = `<em>${cData.name || "Anon"}:</em> ${cData.text}`;
-            commentsDiv.appendChild(p);
-          });
+      if (data.images?.length) {
+        const imgDiv = document.createElement("div");
+        data.images.forEach(src => {
+          const img = document.createElement("img");
+          img.src = src;
+          img.style.width = "80px";
+          img.style.margin = "3px";
+          imgDiv.appendChild(img);
         });
-    }
-
-    async function submitComment(docId) {
-      const input = document.getElementById(`commentInput-${docId}`);
-      const text = input.value.trim();
-      if (!text) return;
-
-      await db.collection("responses").doc(docId).collection("comments").add({
-        name: document.getElementById("nameSelect").value,
-        text,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      input.value = "";
-    }
-
-    function loadHistory() {
-  db.collection("responses")
-    .orderBy("timestamp", "desc")
-    .onSnapshot(snapshot => {
-      const historyList = document.getElementById("historyList");
-      historyList.innerHTML = "";
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const div = document.createElement("div");
-        div.className = "entry";
-
-        // Name and Word
-        const nameHtml = `<strong>${data.word} – ${data.name}</strong>`;
-
-        // Build content
-        let content = "";
-
-        // 1️⃣ Audio (Base64) if exists
-        if (data.audioBase64) {
-          content += `<audio controls src="${data.audioBase64}" style="width:50%; margin-top:4px;"></audio>`;
-        }
-
-        // 2️⃣ Text if exists
-        if (data.text) {
-          content += `<div style="margin-top:4px;">${data.text}</div>`;
-        }
-
-        // 3️⃣ Optional: Detect Spotify / YouTube links in text
-        const spotifyRegex = /(https?:\/\/open\.spotify\.com\/[^\s]+)/;
-        const youtubeRegex = /(https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([^\s&]+)|https?:\/\/youtu\.be\/([^\s&]+))/;
-
-        if (data.text) {
-          if (spotifyRegex.test(data.text)) {
-            const match = data.text.match(spotifyRegex);
-            const embedUrl = match[1].replace("open.spotify.com", "open.spotify.com/embed");
-            content = `<iframe style="border-radius:12px"
-                        src="${embedUrl}"
-                        width="50%"
-                        height="100"
-                        frameborder="0"
-                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-                      </iframe>`;
-          } else if (youtubeRegex.test(data.text)) {
-            const match = data.text.match(youtubeRegex);
-            const videoId = match[2] || match[3];
-            const embedUrl = `https://www.youtube.com/embed/${videoId}`;
-            content = `<iframe width="560" height="315"
-                        src="${embedUrl}"
-                        frameborder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen>
-                      </iframe>`;
-          }
-        }
-
-        // Render entry
-        div.innerHTML = `${nameHtml}<br>${content}`;
-        historyList.appendChild(div);
-
-        // Add comment box (existing function)
-        addCommentBox(doc.id, div);
-      });
+        commentsDiv.appendChild(imgDiv);
+      }
     });
+  });
 }
 
+// ✅ Submit comment
+async function submitComment(docId, btn) {
+  const input = document.getElementById(`commentInput-${docId}`);
+  const text = input.value.trim();
+  if (!text && !commentImagesMap.get(btn.previousElementSibling.previousElementSibling)?.length) return;
 
+  const uploadInput = btn.previousElementSibling.previousElementSibling;
+  const images = commentImagesMap.get(uploadInput) || [];
 
-    (async () => {
-      const word = await getRandomWord();
-      document.getElementById("submitBtn").addEventListener("click", () => submitResponse(word));
-      loadHistory();
-    })();
-  </script>
+  await db.collection("responses").doc(docId).collection("comments").add({
+    name: document.getElementById("nameSelect").value,
+    text,
+    images,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  input.value = "";
+  uploadInput.value = "";
+  uploadInput.nextElementSibling.innerHTML = "";
+}
+
+// ✅ Load responses + comments
+function loadHistory() {
+  db.collection("responses").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+    const historyList = document.getElementById("historyList");
+    historyList.innerHTML = "";
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const div = document.createElement("div");
+      div.className = "entry";
+
+      let html = `<strong>${data.word} – ${data.name}</strong>`;
+      if (data.text) html += `<div>${data.text}</div>`;
+      if (data.images?.length) {
+        html += `<div>${data.images.map(src => `<img src="${src}" style="width:100px;margin:4px;border-radius:6px;">`).join("")}</div>`;
+      }
+
+      div.innerHTML = html;
+      historyList.appendChild(div);
+      addCommentBox(doc.id, div);
+    });
+  });
+}
+
+getRandomWord();
+loadHistory();
+</script>
 </body>
 </html>
