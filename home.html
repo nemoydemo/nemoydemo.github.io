@@ -24,7 +24,16 @@
       border: 1px solid #ccc;
     }
 
-    /* Other existing styles unchanged */
+    button.delete-btn {
+    background-color: #5a6d8c; /* subtle grey-blue */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    margin-left: 6px;
+    cursor: pointer;
+  }
   </style>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -197,6 +206,15 @@ function addCommentBox(docId, entryDiv) {
       const data = c.data();
       const p = document.createElement("p");
       p.innerHTML = `<em>${data.name}:</em> ${data.text}`;
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "☒";
+      delBtn.className = "delete-btn";
+      delBtn.onclick = async () => {
+        if (confirm("Delete this comment?")) {
+          await db.collection("responses").doc(docId).collection("comments").doc(c.id).delete();
+        }
+      };
+      p.appendChild(delBtn);
       commentsDiv.appendChild(p);
 
       if (data.images?.length) {
@@ -218,10 +236,10 @@ function addCommentBox(docId, entryDiv) {
 async function submitComment(docId, btn) {
   const input = document.getElementById(`commentInput-${docId}`);
   const text = input.value.trim();
-  if (!text && !commentImagesMap.get(btn.previousElementSibling.previousElementSibling)?.length) return;
-
   const uploadInput = btn.previousElementSibling.previousElementSibling;
   const images = commentImagesMap.get(uploadInput) || [];
+
+  if (!text && images.length === 0) return;
 
   await db.collection("responses").doc(docId).collection("comments").add({
     name: document.getElementById("nameSelect").value,
@@ -235,7 +253,7 @@ async function submitComment(docId, btn) {
   uploadInput.nextElementSibling.innerHTML = "";
 }
 
-// ✅ Load responses + comments
+// ✅ Load responses + comments + delete post button
 function loadHistory() {
   db.collection("responses").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     const historyList = document.getElementById("historyList");
@@ -251,6 +269,9 @@ function loadHistory() {
       if (data.images?.length) {
         html += `<div>${data.images.map(src => `<img src="${src}" style="width:100px;margin:4px;border-radius:6px;">`).join("")}</div>`;
       }
+
+      // ✅ Add delete post button
+      html += `<button class="delete-btn" onclick="if(confirm('Delete this post?')) db.collection('responses').doc('${doc.id}').delete();">☒</button>`;
 
       div.innerHTML = html;
       historyList.appendChild(div);
